@@ -3,7 +3,7 @@ unit Storage.Chronos;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.Generics.Collections, Atom, System.Rtti;
+  System.SysUtils, System.Generics.Collections, Atom, System.Rtti, System.Classes;
 
 type
 
@@ -40,7 +40,7 @@ type
 
 
 var
-  Chronos: TChronos;
+  Chronos: TChronosManager;
 
 procedure Register;
 
@@ -89,7 +89,7 @@ begin
   FData := TObjectDictionary<string, TAtom>.Create([doOwnsValues]);
 end;
 
-destructor TChronos.Destroy;
+destructor TChronosManager.Destroy;
 begin
   FData.DisposeOf;
   inherited;
@@ -235,12 +235,12 @@ end;
 
 function TChronos.TryGetItem<AtomType>(ATag: string; out AValue: AtomType): Boolean;
 begin
-  Result := Chronos.TryGetItem<AtomType>(ATag, AData);
+  Result := Chronos.TryGetItem<AtomType>(ATag, AValue);
 end;
 
 procedure Register;
 begin
-  Classes.RegisterComponents('HashLoad', [TChronosComponent]);
+  RegisterComponents('HashLoad', [TChronos]);
 end;
 
 initialization
