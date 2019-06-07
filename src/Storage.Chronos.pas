@@ -3,23 +3,23 @@ unit Storage.Chronos;
 interface
 
 uses
-  System.SysUtils, System.Generics.Collections, Atom, System.Rtti, System.Classes;
+  System.SysUtils, System.Generics.Collections, Atom, System.Rtti, System.Classes, System.Generics.Defaults;
 
 type
 
-  TChronosManager = class(TInterfacedObject, IAtomConsumer)
+  TChronosManager = class(TSingletonImplementation, IAtomConsumer)
   private
     FData: TDictionary<string, TAtom>;
 
   public
     constructor Create; reintroduce;
 
-    procedure SetItem<AtomType>(ATag: string; const AData: AtomType); overload;
-    procedure SetItem<AtomType>(ATag: string; const AData: AtomType; ATTL: Int64); overload;
-    function GetItem<AtomType>(ATag: string): AtomType;
-    procedure RemoveItem(ATag: string);
-    function ContainsItem(ATag: string): Boolean;
-    function TryGetItem<AtomType>(ATag: string; out AValue: AtomType): Boolean;
+    procedure SetItem<AtomType>(AKey: string; const AValue: AtomType); overload;
+    procedure SetItem<AtomType>(AKey: string; const AValue: AtomType; ATTL: Int64); overload;
+    function GetItem<AtomType>(AKey: string): AtomType;
+    procedure RemoveItem(AKey: string);
+    function ContainsItem(AKey: string): Boolean;
+    function TryGetItem<AtomType>(AKey: string; out AValue: AtomType): Boolean;
 
     procedure SaveToFile(const AFileName: string);
     procedure LoadFromFile(const AFileName: string);
@@ -30,12 +30,12 @@ type
 
  TChronos = class(TComponent)
   public
-    procedure SetItem<AtomType>(ATag: string; const AData: AtomType); overload;
-    procedure SetItem<AtomType>(ATag: string; const AData: AtomType; ATTL: Int64); overload;
-    function GetItem<AtomType>(ATag: string): AtomType;
-    procedure RemoveItem(ATag: string);
-    function ContainsItem(ATag: string): Boolean;
-    function TryGetItem<AtomType>(ATag: string; out AValue: AtomType): Boolean;
+    procedure SetItem<AtomType>(AKey: string; const AValue: AtomType); overload;
+    procedure SetItem<AtomType>(AKey: string; const AValue: AtomType; ATTL: Int64); overload;
+    function GetItem<AtomType>(AKey: string): AtomType;
+    procedure RemoveItem(AKey: string);
+    function ContainsItem(AKey: string): Boolean;
+    function TryGetItem<AtomType>(AKey: string; out AValue: AtomType): Boolean;
   end;
 
 
@@ -52,36 +52,36 @@ uses
 const
   C_SECTION = 'CHRONOS';
 
-procedure TChronosManager.SetItem<AtomType>(ATag: string; const AData: AtomType);
+procedure TChronosManager.SetItem<AtomType>(AKey: string; const AValue: AtomType);
 begin
-  SetItem<AtomType>(ATag, AData, -1);
+  SetItem<AtomType>(AKey, AValue, -1);
 end;
 
-procedure TChronosManager.SetItem<AtomType>(ATag: string; const AData: AtomType; ATTL: Int64);
+procedure TChronosManager.SetItem<AtomType>(AKey: string; const AValue: AtomType; ATTL: Int64);
 var
   LData: TAtom;
 begin
-  System.TMonitor.Enter(Self);
-  ATag := ATag.ToUpper;
+  System.TMonitor.Enter(FData);
+  AKey := AKey.ToUpper;
   try
-    if FData.TryGetValue(ATag, LData) then
-      LData.SetValue(AData)
+    if FData.TryGetValue(AKey, LData) then
+      LData.SetValue(AValue)
     else
     begin
       LData := TAtom.Create(Self);
-      FData.Add(ATag, LData);
-      LData.Tag := ATag;
-      LData.SetValue(AData);
+      FData.Add(AKey, LData);
+      LData.Tag := AKey;
+      LData.SetValue(AValue);
     end;
     LData.TTL := ATTL;
   finally
-    System.TMonitor.Exit(Self);
+    System.TMonitor.Exit(FData);
   end;
 end;
 
-function TChronosManager.ContainsItem(ATag: string): Boolean;
+function TChronosManager.ContainsItem(AKey: string): Boolean;
 begin
-  Result := FData.ContainsKey(ATag);
+  Result := FData.ContainsKey(AKey);
 end;
 
 constructor TChronosManager.Create;
@@ -95,17 +95,17 @@ begin
   inherited;
 end;
 
-function TChronosManager.GetItem<AtomType>(ATag: string): AtomType;
+function TChronosManager.GetItem<AtomType>(AKey: string): AtomType;
 var
   LData: TAtom;
 begin
-  System.TMonitor.Enter(Self);
+  System.TMonitor.Enter(FData);
   try
-    ATag := ATag.ToUpper;
-    if FData.TryGetValue(ATag, LData) then
+    AKey := AKey.ToUpper;
+    if FData.TryGetValue(AKey, LData) then
       Result := LData.GetValue<AtomType>
   finally
-    System.TMonitor.Exit(Self);
+    System.TMonitor.Exit(FData);
   end;
 end;
 
@@ -152,14 +152,14 @@ begin
   end;
 end;
 
-procedure TChronosManager.RemoveItem(ATag: string);
+procedure TChronosManager.RemoveItem(AKey: string);
 begin
-  System.TMonitor.Enter(Self);
+  System.TMonitor.Enter(FData);
   try
-    ATag := ATag.ToUpper;
-    FData.Remove(ATag);
+    AKey := AKey.ToUpper;
+    FData.Remove(AKey);
   finally
-    System.TMonitor.Exit(Self);
+    System.TMonitor.Exit(FData);
   end;
 end;
 
@@ -197,45 +197,45 @@ begin
   end;
 end;
 
-function TChronosManager.TryGetItem<AtomType>(ATag: string; out AValue: AtomType): Boolean;
+function TChronosManager.TryGetItem<AtomType>(AKey: string; out AValue: AtomType): Boolean;
 var
   LAtom: TAtom;
 begin
-  Result := FData.TryGetValue(ATag, LAtom);
+  Result := FData.TryGetValue(AKey, LAtom);
   if Result then
     AValue := LAtom.GetValue<AtomType>;
 end;
 
 { TChronosComponent }
 
-function TChronos.ContainsItem(ATag: string): Boolean;
+function TChronos.ContainsItem(AKey: string): Boolean;
 begin
-  Result := Chronos.ContainsItem(ATag)
+  Result := Chronos.ContainsItem(AKey)
 end;
 
-function TChronos.GetItem<AtomType>(ATag: string): AtomType;
+function TChronos.GetItem<AtomType>(AKey: string): AtomType;
 begin
-  Result := Chronos.GetItem<AtomType>(ATag);
+  Result := Chronos.GetItem<AtomType>(AKey);
 end;
 
-procedure TChronos.RemoveItem(ATag: string);
+procedure TChronos.RemoveItem(AKey: string);
 begin
-  Chronos.RemoveItem(ATag);
+  Chronos.RemoveItem(AKey);
 end;
 
-procedure TChronos.SetItem<AtomType>(ATag: string; const AData: AtomType);
+procedure TChronos.SetItem<AtomType>(AKey: string; const AValue: AtomType);
 begin
-  Chronos.SetItem<AtomType>(ATag, AData);
+  Chronos.SetItem<AtomType>(AKey, AValue);
 end;
 
-procedure TChronos.SetItem<AtomType>(ATag: string; const AData: AtomType; ATTL: Int64);
+procedure TChronos.SetItem<AtomType>(AKey: string; const AValue: AtomType; ATTL: Int64);
 begin
-  Chronos.SetItem<AtomType>(ATag, AData, ATTL);
+  Chronos.SetItem<AtomType>(AKey, AValue, ATTL);
 end;
 
-function TChronos.TryGetItem<AtomType>(ATag: string; out AValue: AtomType): Boolean;
+function TChronos.TryGetItem<AtomType>(AKey: string; out AValue: AtomType): Boolean;
 begin
-  Result := Chronos.TryGetItem<AtomType>(ATag, AValue);
+  Result := Chronos.TryGetItem<AtomType>(AKey, AValue);
 end;
 
 procedure Register;
@@ -246,5 +246,9 @@ end;
 initialization
 
 Chronos := TChronosManager.Create;
+
+finalization
+
+Chronos.DisposeOf;
 
 end.
