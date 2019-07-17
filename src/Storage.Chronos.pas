@@ -81,7 +81,7 @@ end;
 
 function TChronosManager.ContainsItem(AKey: string): Boolean;
 begin
-  Result := FData.ContainsKey(AKey);
+  Result := FData.ContainsKey(AKey.ToUpper);
 end;
 
 constructor TChronosManager.Create;
@@ -201,7 +201,7 @@ function TChronosManager.TryGetItem<AtomType>(AKey: string; out AValue: AtomType
 var
   LAtom: TAtom;
 begin
-  Result := FData.TryGetValue(AKey, LAtom);
+  Result := FData.TryGetValue(AKey.ToUpper, LAtom);
   if Result then
     AValue := LAtom.GetValue<AtomType>;
 end;
