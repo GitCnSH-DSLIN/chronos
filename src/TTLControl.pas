@@ -36,7 +36,7 @@ type
     procedure TTLRegister(AObject: ITTLConsumer; ALiveTime: Int64);
     procedure TTLRemove(AObject: ITTLConsumer);
     constructor Create();
-
+    class destructor UnInitialize;
     class function GetInstance: TControlTTL;
     destructor Destroy; override;
   end;
@@ -100,6 +100,11 @@ begin
     LTTLAtom.Stop;
     FControlled.Remove(AObject);
   end;
+end;
+
+class destructor TControlTTL.UnInitialize;
+begin
+  FreeAndNil(FInstance);
 end;
 
 { TAtomTTL }
