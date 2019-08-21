@@ -7,6 +7,7 @@ uses
 
 type
   IAtomConsumer = interface
+  ['{7051E259-B5BD-4ACF-ACFB-B2017A1C6EA1}']
     procedure RemoveItem(ATag: string);
   end;
 

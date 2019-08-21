@@ -7,6 +7,7 @@ uses
 
 type
   ITTLConsumer = interface
+  ['{EF57E12C-A4FE-4293-B034-073D8C64A210}']
     procedure DoRemove;
   end;
 
